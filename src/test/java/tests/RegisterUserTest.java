@@ -41,7 +41,7 @@ public class RegisterUserTest extends BasicTest {
 
         // Step 5: Verify "Enter Account Information" visible
         Assert.assertTrue(registerPage.isEnterAccountInfoVisible(),
-                " Enter Account Information not visible");
+                "Enter Account Information not visible");
 
         // Step 6: Fill account details
         registerPage.fillAccountDetails("Test@123");
@@ -81,7 +81,7 @@ public class RegisterUserTest extends BasicTest {
 
         // Step 13: Verify "Account Deleted!" visible
         Assert.assertTrue(registerPage.isAccountDeletedVisible(),
-                " Account not deleted!");
+                "Account not deleted!");
     }
 
     @AfterMethod
