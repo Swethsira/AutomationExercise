@@ -1,121 +1,49 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+pipeline {
+    agent any
 
-    <groupId>com.automation.exercise</groupId>
-    <artifactId>Capstone_Automation_Exercise</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    tools {
+        jdk 'Java11'
+        maven 'maven'
+    }
 
-    <name>Capstone_Automation_Exercise</name>
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Cloning repository with credentials...'
+                git branch: 'main',
+                    url: 'https://github.com/Swethsira/AutomationExercise.git',
+                    credentialsId: 'AutomationExercise'
+            }
+        }
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-    </properties>
+        stage('Build & Test') {
+            steps {
+                echo 'Building project and running tests...'
+                bat 'mvn clean install'
+            }
+        }
 
-    <dependencies>
-        <!-- Selenium -->
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>4.35.0</version>
-        </dependency>
+        stage('Push Changes') {
+            steps {
+                echo 'Pushing local changes to GitHub...'
+                withCredentials([usernamePassword(credentialsId: 'AutomationExercise', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                    bat """
+                        "C:\\Program Files\\Git\\bin\\git.exe" config user.email "%GIT_USER%@users.noreply.github.com"
+                        "C:\\Program Files\\Git\\bin\\git.exe" config user.name "%GIT_USER%"
 
-        <!-- TestNG -->
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>7.10.2</version>
-            <scope>test</scope>
-        </dependency>
+                        "C:\\Program Files\\Git\\bin\\git.exe" add .
+                        "C:\\Program Files\\Git\\bin\\git.exe" commit -m "Automated commit from Jenkins" || echo "No changes to commit"
 
-        <!-- Apache POI -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-            <version>5.2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>5.4.1</version>
-        </dependency>
+                        "C:\\Program Files\\Git\\bin\\git.exe" push https://%GIT_USER%:%GIT_TOKEN%@github.com/Swethsira/AutomationExercise.git HEAD:main
+                    """
+                }
+            }
+        }
+    }
 
-        <!-- Logging (use Log4j2 + SLF4J only) -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.24.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.12</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Extent Reports -->
-        <dependency>
-            <groupId>com.aventstack</groupId>
-            <artifactId>extentreports</artifactId>
-            <version>5.0.9</version>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Cucumber -->
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-java</artifactId>
-            <version>7.15.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit</artifactId>
-            <version>7.15.0</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <!-- Compiler -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-
-            <!-- Surefire -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-                <configuration>
-                    <forkedProcessTimeoutInSeconds>900</forkedProcessTimeoutInSeconds>
-                    <reuseForks>true</reuseForks>
-                    <testFailureIgnore>false</testFailureIgnore>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-</project>
+    post {
+        always {
+            echo 'Pipeline finished, Push Changes stage already executed regardless of test results.'
+        }
+    }
+}
